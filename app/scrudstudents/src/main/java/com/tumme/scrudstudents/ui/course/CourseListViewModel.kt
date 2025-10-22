@@ -16,20 +16,20 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class CourseListViewModel @Inject constructor(
-    private val repo: SCRUDRepository // Repository for database operations
+    private val repo: SCRUDRepository, // Repository for database operations
 ) : ViewModel() {
 
     /** StateFlow exposing the list of courses from the database. */
     private val _courses: StateFlow<List<CourseEntity>> =
         repo.getAllCourses().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val students: StateFlow<List<CourseEntity>> = _courses
+    val course: StateFlow<List<CourseEntity>> = _courses
 
     /** SharedFlow for UI events and error messages. */
     private val _events = MutableSharedFlow<String>()
     val events = _events.asSharedFlow()
 
     /** Deletes a course and emits a success event. */
-    fun deleteStudent(course: CourseEntity) = viewModelScope.launch {
+    fun deleteCourse(course: CourseEntity) = viewModelScope.launch {
         repo.deleteCourse(course)
         _events.emit("Course deleted")
     }

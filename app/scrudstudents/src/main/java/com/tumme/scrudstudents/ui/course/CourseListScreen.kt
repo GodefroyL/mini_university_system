@@ -10,8 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.tumme.scrudstudents.ui.student.StudentListViewModel
-import com.tumme.scrudstudents.ui.student.StudentRow
+import com.tumme.scrudstudents.ui.student.CourseRow
+
+private val CourseListViewModel.courses: Any
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,8 +25,7 @@ fun CourseListScreen(
     onNavigateToDetail: (Int) -> Unit = {}
 ) {
     /** Collects the list of course as state for Compose to observe.*/
-    val course by viewModel.course.collectAsState()
-
+    val courses by viewModel.courses.collectAsState()
     /**
      * Coroutine scope for the ViewModel.
      * It is used to launch coroutines from the ViewModel.
@@ -61,7 +61,7 @@ fun CourseListScreen(
                 items(courses) { course ->
                     /** Displays each student as a row with actions.*/
                     CourseRow(
-                        student = course,
+                        course = course,
                         onEdit = { /* navigate to form prefilled (not implemented here) */ },
                         onDelete = { viewModel.deleteCourse(course) },
                         onView = { onNavigateToDetail(course.idCourse) },
