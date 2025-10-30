@@ -10,8 +10,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel for student-related UI composables.
- * Uses the repository to fetch and manage student data.
+ * ViewModel for course-related UI composables.
+ * Uses the repository to fetch and manage course data.
  * Injected by Hilt for dependency management.
  */
 @HiltViewModel
@@ -22,7 +22,7 @@ class CourseListViewModel @Inject constructor(
     /** StateFlow exposing the list of courses from the database. */
     private val _courses: StateFlow<List<CourseEntity>> =
         repo.getAllCourses().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val course: StateFlow<List<CourseEntity>> = _courses
+    val courses: StateFlow<List<CourseEntity>> = _courses
 
     /** SharedFlow for UI events and error messages. */
     private val _events = MutableSharedFlow<String>()

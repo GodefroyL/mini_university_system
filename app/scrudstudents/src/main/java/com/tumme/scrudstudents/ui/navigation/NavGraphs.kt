@@ -113,12 +113,10 @@ fun AppNavHost() {
         }
 
         composable(Routes.SUBSCRIBE_FORM) {
-            // Utilisez les propriétés exposées par les ViewModels
             val students by studentViewModel.students.collectAsState()
-            val courses by courseViewModel.students.collectAsState()
+            val courses by courseViewModel.courses.collectAsState()
 
             SubscribeFormScreen(
-                // Utilisez les propriétés directes des entités
                 students = students.map { student ->
                     Pair(student.idStudent, "${student.firstName} ${student.lastName}")
                 },
