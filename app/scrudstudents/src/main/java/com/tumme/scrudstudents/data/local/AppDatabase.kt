@@ -13,7 +13,7 @@ import com.tumme.scrudstudents.data.local.model.*
         CourseEntity::class,
         SubscribeEntity::class,
     ],
-    version = 1,
+    version = 2, // Version incrémentée
     exportSchema = false
 )
 @TypeConverters(Converters::class)

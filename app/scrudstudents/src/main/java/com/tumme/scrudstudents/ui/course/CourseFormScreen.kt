@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tumme.scrudstudents.data.local.model.CourseEntity
 import com.tumme.scrudstudents.data.local.model.LevelCourse
+import com.tumme.scrudstudents.data.local.model.TeacherEntity
 
 /**
  * Composable screen for creating or editing a course record.
@@ -25,6 +26,8 @@ fun CourseFormScreen(
     viewModel: CourseListViewModel = hiltViewModel(),
     onSaved: () -> Unit = {}
 ) {
+    val teachers by viewModel.teachers.collectAsState()
+
     /** Randomly generated ID for new course. */
     var id by remember { mutableStateOf((0..10000).random()) }
 
@@ -40,8 +43,8 @@ fun CourseFormScreen(
     /** State for the course's description input. */
     var description by remember { mutableStateOf("") }
 
-    /** State for the course's teacher input. */
-    var teacher by remember { mutableStateOf("") }
+    /** State for the selected teacher. */
+    var selectedTeacher by remember { mutableStateOf<TeacherEntity?>(null) }
 
     /**
      * Column layout for the form.
@@ -79,42 +82,52 @@ fun CourseFormScreen(
         Spacer(Modifier.height(8.dp))
 
         /**
-         * Text field for entering the teacher's ID.
+         * Dropdown menu for selecting the teacher.
          */
-        TextField(
-            value = teacher,
-            onValueChange = { teacher = it },
-            label = { Text("Teacher ID") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
+        var teacherExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(expanded = teacherExpanded, onExpandedChange = { teacherExpanded = !teacherExpanded }) {
+            TextField(
+                modifier = Modifier.menuAnchor(),
+                value = selectedTeacher?.let { "${it.firstName} ${it.lastName}" } ?: "",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Teacher") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = teacherExpanded) }
+            )
+            ExposedDropdownMenu(expanded = teacherExpanded, onDismissRequest = { teacherExpanded = false }) {
+                teachers.forEach { teacher ->
+                    DropdownMenuItem(
+                        text = { Text("${teacher.firstName} ${teacher.lastName}") },
+                        onClick = {
+                            selectedTeacher = teacher
+                            teacherExpanded = false
+                        }
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(8.dp))
 
         /**
          * Dropdown menu for selecting the course's level.
          */
-        var expanded by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
+        var levelExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(expanded = levelExpanded, onExpandedChange = { levelExpanded = !levelExpanded }) {
             TextField(
                 modifier = Modifier.menuAnchor(),
                 value = levelCode.value,
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Level of the course") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = levelExpanded) }
             )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
+            ExposedDropdownMenu(expanded = levelExpanded, onDismissRequest = { levelExpanded = false }) {
                 LevelCourse.entries.forEach { levelOption ->
                     DropdownMenuItem(
                         text = { Text(levelOption.value) },
                         onClick = {
                             levelCode = levelOption
-                            expanded = false
+                            levelExpanded = false
                         }
                     )
                 }
@@ -133,7 +146,7 @@ fun CourseFormScreen(
                 nameCourse = nameCourse,
                 ectsCourse = ectsCourse,
                 levelCode = levelCode.name,
-                teacherId = teacher.toIntOrNull(),
+                teacherId = selectedTeacher?.teacherId,
                 description = description
             )
             viewModel.insertCourse(course)

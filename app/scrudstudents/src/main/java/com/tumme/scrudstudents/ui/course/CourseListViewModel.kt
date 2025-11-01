@@ -3,6 +3,7 @@ package com.tumme.scrudstudents.ui.course
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tumme.scrudstudents.data.local.model.CourseEntity
+import com.tumme.scrudstudents.data.local.model.TeacherEntity
 import com.tumme.scrudstudents.data.repository.SCRUDRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -23,6 +24,11 @@ class CourseListViewModel @Inject constructor(
     private val _courses: StateFlow<List<CourseEntity>> =
         repo.getAllCourses().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     val courses: StateFlow<List<CourseEntity>> = _courses
+
+    /** StateFlow exposing the list of teachers from the database. */
+    private val _teachers: StateFlow<List<TeacherEntity>> =
+        repo.getAllTeachers().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val teachers: StateFlow<List<TeacherEntity>> = _teachers
 
     /** SharedFlow for UI events and error messages. */
     private val _events = MutableSharedFlow<String>()

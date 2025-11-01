@@ -1,10 +1,6 @@
 package com.tumme.scrudstudents.ui.subscribe
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -13,26 +9,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.tumme.scrudstudents.data.local.model.CourseEntity
+import com.tumme.scrudstudents.data.local.model.StudentEntity
 import com.tumme.scrudstudents.ui.components.TableHeader
-import com.tumme.scrudstudents.ui.course.CourseListViewModel
 import com.tumme.scrudstudents.ui.navigation.Routes
-import com.tumme.scrudstudents.ui.student.StudentListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubscribeListScreen(
     navController: NavController,
-    subscribeViewModel: SubscribeViewModel = hiltViewModel(),
-    studentViewModel: StudentListViewModel = hiltViewModel(),
-    courseViewModel: CourseListViewModel = hiltViewModel()
+    viewModel: SubscribeViewModel = hiltViewModel()
 ) {
-    val subscribes by subscribeViewModel.subscribes.collectAsState()
-    val students by studentViewModel.students.collectAsState()
-    val courses by courseViewModel.courses.collectAsState()
+    val subscribes by viewModel.subscribes.collectAsState()
+    val students by viewModel.students.collectAsState()
+    val courses by viewModel.courses.collectAsState()
 
     // Create maps for quick lookup of names by ID
-    val studentMap = remember(students) { students.associateBy({ it.idStudent }, { "${it.firstName} ${it.lastName}" }) }
-    val courseMap = remember(courses) { courses.associateBy({ it.idCourse }, { it.nameCourse }) }
+    val studentMap = remember(students) {
+        students.associateBy(
+            keySelector = { student: StudentEntity -> student.idStudent },
+            valueTransform = { student: StudentEntity -> "${student.firstName} ${student.lastName}" }
+        )
+    }
+    val courseMap = remember(courses) {
+        courses.associateBy(
+            keySelector = { course: CourseEntity -> course.idCourse },
+            valueTransform = { course: CourseEntity -> course.nameCourse }
+        )
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text("Subscriptions") }) },
@@ -63,7 +67,7 @@ fun SubscribeListScreen(
                         studentName = studentName,
                         courseName = courseName,
                         score = subscribe.score,
-                        onDelete = { subscribeViewModel.deleteSubscribe(subscribe) }
+                        onDelete = { viewModel.deleteSubscribe(subscribe) }
                     )
                 }
             }

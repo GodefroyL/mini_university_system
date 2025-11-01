@@ -1,116 +1,89 @@
 package com.tumme.scrudstudents.ui.subscribe
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.tumme.scrudstudents.data.local.model.SubscribeEntity
+import com.tumme.scrudstudents.data.local.model.CourseEntity
+import com.tumme.scrudstudents.data.local.model.StudentEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubscribeFormScreen(
     viewModel: SubscribeViewModel = hiltViewModel(),
-    students: List<Pair<Int, String>>,
-    courses: List<Pair<Int, String>>,
-    onSaved: () -> Unit
+    onSaved: () -> Unit = {}
 ) {
-    var studentId by remember { mutableStateOf(0) }
-    var courseId by remember { mutableStateOf(0) }
-    var score by remember { mutableStateOf("0") }
-    var expandedStudent by remember { mutableStateOf(false) }
-    var expandedCourse by remember { mutableStateOf(false) }
+    val students by viewModel.students.collectAsState()
+    val courses by viewModel.courses.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    var selectedStudent by remember { mutableStateOf<StudentEntity?>(null) }
+    var selectedCourse by remember { mutableStateOf<CourseEntity?>(null) }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         // Student Dropdown
-        ExposedDropdownMenuBox(
-            expanded = expandedStudent,
-            onExpandedChange = { expandedStudent = !expandedStudent }
-        ) {
-            OutlinedTextField(
-                value = students.find { it.first == studentId }?.second ?: "Select Student",
+        var studentExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(expanded = studentExpanded, onExpandedChange = { studentExpanded = !studentExpanded }) {
+            TextField(
+                modifier = Modifier.menuAnchor(),
+                value = selectedStudent?.let { "${it.firstName} ${it.lastName}" } ?: "",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Student") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStudent) },
-                modifier = Modifier.fillMaxWidth()
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = studentExpanded) }
             )
-            ExposedDropdownMenu(
-                expanded = expandedStudent,
-                onDismissRequest = { expandedStudent = false }
-            ) {
+            ExposedDropdownMenu(expanded = studentExpanded, onDismissRequest = { studentExpanded = false }) {
                 students.forEach { student ->
                     DropdownMenuItem(
-                        text = { Text(student.second) },
+                        text = { Text("${student.firstName} ${student.lastName}") },
                         onClick = {
-                            studentId = student.first
-                            expandedStudent = false
+                            selectedStudent = student
+                            studentExpanded = false
                         }
                     )
                 }
             }
         }
+        Spacer(Modifier.height(8.dp))
 
         // Course Dropdown
-        ExposedDropdownMenuBox(
-            expanded = expandedCourse,
-            onExpandedChange = { expandedCourse = !expandedCourse }
-        ) {
-            OutlinedTextField(
-                value = courses.find { it.first == courseId }?.second ?: "Select Course",
+        var courseExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(expanded = courseExpanded, onExpandedChange = { courseExpanded = !courseExpanded }) {
+            TextField(
+                modifier = Modifier.menuAnchor(),
+                value = selectedCourse?.nameCourse ?: "",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Course") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCourse) },
-                modifier = Modifier.fillMaxWidth()
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = courseExpanded) }
             )
-            ExposedDropdownMenu(
-                expanded = expandedCourse,
-                onDismissRequest = { expandedCourse = false }
-            ) {
+            ExposedDropdownMenu(expanded = courseExpanded, onDismissRequest = { courseExpanded = false }) {
                 courses.forEach { course ->
                     DropdownMenuItem(
-                        text = { Text(course.second) },
+                        text = { Text(course.nameCourse) },
                         onClick = {
-                            courseId = course.first
-                            expandedCourse = false
+                            selectedCourse = course
+                            courseExpanded = false
                         }
                     )
                 }
             }
         }
-
-        // Score Field
-        OutlinedTextField(
-            value = score,
-            onValueChange = { score = it },
-            label = { Text("Score") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
-        )
+        Spacer(Modifier.height(16.dp))
 
         Button(
             onClick = {
-                viewModel.insertSubscribe(
-                    SubscribeEntity(
-                        studentId = studentId,
-                        courseId = courseId,
-                        score = score.toFloatOrNull() ?: 0f
-                    )
-                )
-                onSaved()
+                selectedStudent?.let { student ->
+                    selectedCourse?.let { course ->
+                        viewModel.insertSubscription(student.idStudent, course.idCourse)
+                        onSaved()
+                    }
+                }
             },
-            modifier = Modifier.fillMaxWidth()
+            enabled = selectedStudent != null && selectedCourse != null
         ) {
-            Text("Save")
+            Text("Subscribe")
         }
     }
 }

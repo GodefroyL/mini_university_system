@@ -1,8 +1,6 @@
 package com.tumme.scrudstudents.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -13,13 +11,12 @@ import androidx.navigation.navArgument
 import com.tumme.scrudstudents.ui.course.CourseDetailScreen
 import com.tumme.scrudstudents.ui.course.CourseFormScreen
 import com.tumme.scrudstudents.ui.course.CourseListScreen
-import com.tumme.scrudstudents.ui.course.CourseListViewModel
 import com.tumme.scrudstudents.ui.student.StudentDetailScreen
 import com.tumme.scrudstudents.ui.student.StudentFormScreen
 import com.tumme.scrudstudents.ui.student.StudentListScreen
-import com.tumme.scrudstudents.ui.student.StudentListViewModel
 import com.tumme.scrudstudents.ui.subscribe.SubscribeFormScreen
 import com.tumme.scrudstudents.ui.subscribe.SubscribeListScreen
+import com.tumme.scrudstudents.ui.subscribe.SubscribeViewModel
 
 /**
  * Navigation routes for the application.
@@ -60,10 +57,6 @@ object Routes {
  */
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
-    /** ViewModels for fetching data needed in forms */
-    val studentViewModel: StudentListViewModel = hiltViewModel()
-    val courseViewModel: CourseListViewModel = hiltViewModel()
-
     /** Navigation graph with all application routes */
     NavHost(navController, startDestination = Routes.STUDENT_LIST, modifier = modifier) {
         // Student destinations
@@ -116,16 +109,9 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         }
 
         composable(Routes.SUBSCRIBE_FORM) {
-            val students by studentViewModel.students.collectAsState()
-            val courses by courseViewModel.courses.collectAsState()
-
+            val viewModel: SubscribeViewModel = hiltViewModel()
             SubscribeFormScreen(
-                students = students.map { student ->
-                    Pair(student.idStudent, "${student.firstName} ${student.lastName}")
-                },
-                courses = courses.map { course ->
-                    Pair(course.idCourse, course.nameCourse)
-                },
+                viewModel = viewModel,
                 onSaved = { navController.popBackStack() })
         }
     }
