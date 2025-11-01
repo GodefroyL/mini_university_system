@@ -33,8 +33,17 @@ fun CourseFormScreen(
     var ectsCourseText by remember { mutableStateOf("0") }
 
     /** State for the course's level input. */
-    var levelCourse by remember { mutableStateOf(LevelCourse.B1) }
+    var levelCode by remember { mutableStateOf(LevelCourse.B1) }
 
+    /** State for the course's description input. */
+    var description by remember { mutableStateOf("") }
+
+    /** State for the course's teacher input. */
+    var teacher by remember { mutableStateOf("") }
+
+    /**
+     * Column layout for the form.
+     */
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         /**
          * Text field for entering the course's name.
@@ -66,7 +75,7 @@ fun CourseFormScreen(
             onExpandedChange = { expanded = !expanded }
         ) {
             TextField(
-                value = levelCourse.value,
+                value = levelCode.value,
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Level of the course") },
@@ -80,7 +89,7 @@ fun CourseFormScreen(
                     DropdownMenuItem(
                         text = { Text(levelOption.value) },
                         onClick = {
-                            levelCourse = levelOption
+                            levelCode = levelOption
                             expanded = false
                         }
                     )
@@ -99,7 +108,9 @@ fun CourseFormScreen(
                 idCourse = id,
                 nameCourse = nameCourse,
                 ectsCourse = ectsCourse,
-                levelCourse = levelCourse
+                levelCode = levelCode.name,
+                teacherId = teacher.toIntOrNull(),
+                description = description
             )
             viewModel.insertCourse(course)
             onSaved()

@@ -30,7 +30,7 @@ fun CourseRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = course.nameCourse, modifier = Modifier.weight(0.4f))
-        Text(text = "${course.levelCourse}", modifier = Modifier.weight(0.3f))
+        Text(text = "${course.levelCode}", modifier = Modifier.weight(0.3f))
         Text(text = "${course.ectsCourse}", modifier = Modifier.weight(0.2f))
         Row(modifier = Modifier.weight(0.10f), horizontalArrangement = Arrangement.SpaceEvenly) {
             IconButton(onClick = onView) { Icon(Icons.Default.Info, contentDescription="View") }

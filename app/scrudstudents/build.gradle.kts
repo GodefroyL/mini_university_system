@@ -47,14 +47,14 @@ android {
 dependencies {
 
     // Hilt (Dependency Injection)
-    implementation("com.google.dagger:hilt-android:2.52")
-    kapt("com.google.dagger:hilt-compiler:2.52")
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.androidx.room.common.jvm)
+    implementation("androidx.room:room-common-jvm:2.8.2")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,9 +77,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
 
     // Room (Database)
-    implementation("androidx.room:room-runtime:2.6.1")
+    implementation(libs.androidx.room.ktx)
+    implementation("androidx.room:room-runtime:2.8.2")
     kapt("androidx.room:room-compiler:2.8.2")
-    implementation("androidx.room:room-ktx:2.6.1")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
@@ -88,4 +88,7 @@ dependencies {
     // Material Icons (optional for your buttons)
     implementation("androidx.compose.material:material-icons-extended:1.7.4")
 
+}
+kapt {
+    correctErrorTypes = true
 }

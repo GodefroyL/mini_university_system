@@ -6,21 +6,36 @@ import com.tumme.scrudstudents.data.local.model.LevelCourse
 import java.util.Date
 
 class Converters {
+    // Convertisseurs pour Gender
     @TypeConverter
-    fun fromTimestamp(value: Long?): Date? = value?.let { Date(it) }
+    fun fromGender(gender: Gender): String {
+        return gender.name
+    }
 
     @TypeConverter
-    fun dateToTimestamp(date: Date?): Long? = date?.time
+    fun toGender(value: String): Gender {
+        return Gender.valueOf(value)
+    }
+
+    // Convertisseurs pour LevelCourse
+    @TypeConverter
+    fun fromLevelCourse(levelCourse: LevelCourse): String {
+        return levelCourse.name
+    }
 
     @TypeConverter
-    fun fromGender(value: String?): Gender? = value?.let { Gender.from(it) }
+    fun toLevelCourse(value: String): LevelCourse {
+        return LevelCourse.valueOf(value)
+    }
+
+    // Converts Long to Date and vice-versa for Room
+    @TypeConverter
+    fun fromTimestamp(value: Long?): Date? {
+        return value?.let { Date(it) }
+    }
 
     @TypeConverter
-    fun genderToString(gender: Gender?): String? = gender?.value
-
-    @TypeConverter
-    fun fromLevel(value: String?): LevelCourse? = value?.let { LevelCourse.from(it) }
-
-    @TypeConverter
-    fun levelToString(level: LevelCourse?): String? = level?.value
+    fun dateToTimestamp(date: Date?): Long? {
+        return date?.time
+    }
 }

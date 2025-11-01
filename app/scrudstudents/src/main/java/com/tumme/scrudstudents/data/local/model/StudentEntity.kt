@@ -2,27 +2,20 @@ package com.tumme.scrudstudents.data.local.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.Date
+import androidx.room.TypeConverters
+import com.tumme.scrudstudents.data.local.Converters
 
-/**
- * Room Entity representing a student in the local database.
- * Mapped to the "students" table.
- */
 @Entity(tableName = "students")
+@TypeConverters(Converters::class)
 data class StudentEntity(
-
-    /** Unique identifier for the student (primary key). */
-    @PrimaryKey val idStudent: Int,
-
-    /** Last name of the student. */
-    val lastName: String,
-
-    /** First name of the student. */
+    @PrimaryKey(autoGenerate = true) val idStudent: Int = 0,
     val firstName: String,
-
-    /** Date of birth of the student. */
-    val dateOfBirth: Date,
-
-    /** Gender of the student (enum: MALE, FEMALE, OTHER, etc.). */
-    val gender: Gender
+    val lastName: String,
+    val email: String,
+    val password: String,  // Dans une application réelle, stockez un hash
+    val dateOfBirth: Long,  // Timestamp
+    @field:TypeConverters(Converters::class)
+    val gender: Gender,
+    val levelCode: String,  // Code du niveau (P1, B1, etc.)
+    val registrationDate: Long = System.currentTimeMillis()  // Timestamp
 )

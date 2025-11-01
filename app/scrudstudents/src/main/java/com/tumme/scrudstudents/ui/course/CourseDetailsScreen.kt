@@ -63,7 +63,7 @@ fun CourseDetailScreen(
                 Text("ID: ${course!!.idCourse}")
                 Text("Name: ${course!!.nameCourse}")
                 Text("ECTS: ${course!!.ectsCourse}")
-                Text("Level: ${course!!.levelCourse}")
+                Text("Level: ${course!!.levelCode}")
             }
         }
     }

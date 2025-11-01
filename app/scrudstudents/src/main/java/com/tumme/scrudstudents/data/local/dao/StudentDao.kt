@@ -24,7 +24,15 @@ interface StudentDao {
     @Delete
     suspend fun delete(student: StudentEntity)
 
+    /** Updates a student. */
+    @Update
+    suspend fun update(student: StudentEntity)
+
     /** Retrieves a student by their ID. */
     @Query("SELECT * FROM students WHERE idStudent = :id LIMIT 1")
     suspend fun getStudentById(id: Int): StudentEntity?
+
+    /** Authenticates a student by email and password. */
+    @Query("SELECT * FROM students WHERE email = :email AND password = :password LIMIT 1")
+    suspend fun authenticate(email: String, password: String): StudentEntity?
 }

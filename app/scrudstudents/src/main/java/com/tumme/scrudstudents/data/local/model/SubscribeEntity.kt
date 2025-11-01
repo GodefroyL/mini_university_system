@@ -16,7 +16,8 @@ import androidx.room.ColumnInfo
     indices = [Index("studentId"), Index("courseId")]
 )
 data class SubscribeEntity(
-    val studentId: Int,
-    val courseId: Int,
-    val score: Float
+    @ColumnInfo(name = "studentId") val studentId: Int,
+    @ColumnInfo(name = "courseId") val courseId: Int,
+    val score: Float,
+    val enrollmentDate: Long = System.currentTimeMillis()
 )
