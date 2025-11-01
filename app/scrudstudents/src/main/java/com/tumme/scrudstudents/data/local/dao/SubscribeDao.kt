@@ -59,4 +59,5 @@ interface SubscribeDao {
     """
     )
     fun getStudentsWithScoresByCourse(courseId: Int): Flow<List<StudentWithScore>>
+
 }

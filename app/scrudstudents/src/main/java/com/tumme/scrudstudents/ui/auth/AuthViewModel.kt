@@ -11,20 +11,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class UserRole {
-    STUDENT, TEACHER
-}
-
-data class LoggedInUser(
-    val userId: Int,
-    val name: String,
-    val role: UserRole
-)
-
 sealed class AuthState {
+    object Idle : AuthState()
     object Loading : AuthState()
     data class Authenticated(val user: LoggedInUser) : AuthState()
-    object Unauthenticated : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -33,58 +23,45 @@ class AuthViewModel @Inject constructor(
     private val repository: SCRUDRepository
 ) : ViewModel() {
 
-    private val _authState = MutableStateFlow<AuthState>(AuthState.Unauthenticated)
+    private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState = _authState.asStateFlow()
 
-    fun login(email: String, password: String) {
+    fun login(email: String, password: String, role: UserRole) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            // Try to authenticate as a student first
-            val student = repository.authenticateStudent(email, password)
-            if (student != null) {
-                val user = LoggedInUser(
-                    userId = student.idStudent,
-                    name = "${student.firstName} ${student.lastName}",
-                    role = UserRole.STUDENT
-                )
-                _authState.value = AuthState.Authenticated(user)
-                return@launch
-            }
+            try {
+                val user = when (role) {
+                    UserRole.STUDENT -> {
+                        val student = repository.authenticateStudent(email, password)
+                        student?.let { LoggedInUser(it.idStudent, UserRole.STUDENT, it.levelCode) }
+                    }
+                    UserRole.TEACHER -> {
+                        val teacher = repository.authenticateTeacher(email, password)
+                        teacher?.let { LoggedInUser(it.teacherId, UserRole.TEACHER) }
+                    }
+                }
 
-            // If not a student, try to authenticate as a teacher
-            val teacher = repository.authenticateTeacher(email, password)
-            if (teacher != null) {
-                val user = LoggedInUser(
-                    userId = teacher.teacherId,
-                    name = "${teacher.firstName} ${teacher.lastName}",
-                    role = UserRole.TEACHER
-                )
-                _authState.value = AuthState.Authenticated(user)
-                return@launch
+                if (user != null) {
+                    _authState.value = AuthState.Authenticated(user)
+                } else {
+                    _authState.value = AuthState.Error("Invalid credentials")
+                }
+            } catch (e: Exception) {
+                _authState.value = AuthState.Error(e.message ?: "An unknown error occurred")
             }
-
-            // If neither, authentication failed
-            _authState.value = AuthState.Error("Invalid email or password")
         }
     }
 
     fun registerStudent(student: StudentEntity) {
         viewModelScope.launch {
             repository.insertStudent(student)
-            // Log the user in directly after registration
-            login(student.email, student.password)
+            // Ideally, you would log the user in directly here
         }
     }
 
     fun registerTeacher(teacher: TeacherEntity) {
         viewModelScope.launch {
             repository.insertTeacher(teacher)
-            // Log the user in directly after registration
-            login(teacher.email, teacher.password)
         }
-    }
-
-    fun logout() {
-        _authState.value = AuthState.Unauthenticated
     }
 }

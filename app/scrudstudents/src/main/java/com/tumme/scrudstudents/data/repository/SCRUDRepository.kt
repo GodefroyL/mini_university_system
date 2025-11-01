@@ -8,6 +8,8 @@ import com.tumme.scrudstudents.data.local.model.CourseEntity
 import com.tumme.scrudstudents.data.local.model.StudentEntity
 import com.tumme.scrudstudents.data.local.model.SubscribeEntity
 import com.tumme.scrudstudents.data.local.model.TeacherEntity
+import com.tumme.scrudstudents.data.model.CourseWithStudents
+import com.tumme.scrudstudents.data.local.model.SubscribeWithCourse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
@@ -143,6 +145,9 @@ class SCRUDRepository(
      */
     suspend fun getCourseById(id: Int) = courseDao.getCourseById(id)
 
+    suspend fun getCoursesWithStudents(teacherId: Int): List<CourseWithStudents> = courseDao.getCoursesWithStudents(teacherId)
+
+
     // Subscribes
     /**
      * Returns all subscriptions from the table
@@ -154,6 +159,8 @@ class SCRUDRepository(
      * @param studentId The ID of the student
      */
     fun getSubscribesByStudent(studentId: Int): Flow<List<SubscribeEntity>> = subscribeDao.getSubscriptionsByStudent(studentId)
+
+    fun getSubscriptionsWithCourses(studentId: Int): Flow<List<com.tumme.scrudstudents.data.local.model.SubscribeWithCourse>> = subscribeDao.getSubscriptionsWithCourses(studentId)
 
     /**
      * Returns subscriptions for a specific course
