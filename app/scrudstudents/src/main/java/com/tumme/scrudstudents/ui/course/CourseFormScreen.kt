@@ -1,7 +1,9 @@
 package com.tumme.scrudstudents.ui.course
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -44,7 +46,7 @@ fun CourseFormScreen(
     /**
      * Column layout for the form.
      */
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
         /**
          * Text field for entering the course's name.
          */
@@ -67,6 +69,27 @@ fun CourseFormScreen(
         Spacer(Modifier.height(8.dp))
 
         /**
+         * Text field for entering the course's description.
+         */
+        TextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Description") }
+        )
+        Spacer(Modifier.height(8.dp))
+
+        /**
+         * Text field for entering the teacher's ID.
+         */
+        TextField(
+            value = teacher,
+            onValueChange = { teacher = it },
+            label = { Text("Teacher ID") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(Modifier.height(8.dp))
+
+        /**
          * Dropdown menu for selecting the course's level.
          */
         var expanded by remember { mutableStateOf(false) }
@@ -75,6 +98,7 @@ fun CourseFormScreen(
             onExpandedChange = { expanded = !expanded }
         ) {
             TextField(
+                modifier = Modifier.menuAnchor(),
                 value = levelCode.value,
                 onValueChange = {},
                 readOnly = true,
