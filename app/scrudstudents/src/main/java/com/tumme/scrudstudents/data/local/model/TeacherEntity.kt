@@ -10,5 +10,6 @@ data class TeacherEntity(
     val lastName: String,
     val email: String,
     val password: String,  // Dans une application réelle, stockez un hash
+    val gender: Gender, // Added gender property
     val registrationDate: Long = System.currentTimeMillis()  // Timestamp
 )

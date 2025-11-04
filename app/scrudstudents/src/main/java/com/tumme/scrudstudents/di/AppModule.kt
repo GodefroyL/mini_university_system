@@ -9,6 +9,7 @@ import com.tumme.scrudstudents.data.local.dao.CourseDao
 import com.tumme.scrudstudents.data.local.dao.StudentDao
 import com.tumme.scrudstudents.data.local.dao.SubscribeDao
 import com.tumme.scrudstudents.data.local.dao.TeacherDao
+import com.tumme.scrudstudents.data.local.model.CourseEntity
 import com.tumme.scrudstudents.data.local.model.Gender
 import com.tumme.scrudstudents.data.local.model.StudentEntity
 import com.tumme.scrudstudents.data.local.model.TeacherEntity
@@ -32,7 +33,8 @@ object AppModule {
     fun provideDatabase(
         @ApplicationContext context: Context,
         studentDaoProvider: Provider<StudentDao>,
-        teacherDaoProvider: Provider<TeacherDao>
+        teacherDaoProvider: Provider<TeacherDao>,
+        courseDaoProvider: Provider<CourseDao> // Add CourseDao provider
     ): AppDatabase {
         return Room.databaseBuilder(context, AppDatabase::class.java, "scrud-db")
             .fallbackToDestructiveMigration()
@@ -41,13 +43,18 @@ object AppModule {
                     super.onCreate(db)
                     // Pre-populate database on creation
                     CoroutineScope(Dispatchers.IO).launch {
-                        // Students
-                        studentDaoProvider.get().insert(StudentEntity(1, "John", "Doe", "john.doe@example.com", "password", 1609459200000, Gender.Male, "B1"))
-                        studentDaoProvider.get().insert(StudentEntity(2, "Jane", "Smith", "jane.smith@example.com", "password", 1609459200000, Gender.Female, "B2"))
-
                         // Teachers
-                        teacherDaoProvider.get().insert(TeacherEntity(1, "Professor", "McGonagall", "minerva.mcgonagall@hogwarts.edu", "password"))
-                        teacherDaoProvider.get().insert(TeacherEntity(2, "Professor", "Snape", "severus.snape@hogwarts.edu", "password"))
+                        teacherDaoProvider.get().insert(TeacherEntity(1, "Michel", "Vincent", "m.vincent@univ.com", "password"))
+                        teacherDaoProvider.get().insert(TeacherEntity(2, "Remi", "Pasquier", "remi.pasquier@univ.com", "password"))
+
+                        // Students
+                        studentDaoProvider.get().insert(StudentEntity(1, "Louis", "Dupont", "louis.dupont@example.com", "password", "04/11/2025", Gender.Male, "B1"))
+                        studentDaoProvider.get().insert(StudentEntity(2, "Jehanne", "de Boisgarnier", "j.dbg@example.com", "password", "04/11/2025", Gender.Female, "B2"))
+
+                        // Courses (with levels that will now appear in registration)
+                        courseDaoProvider.get().insert(CourseEntity(nameCourse = "Algorithmie", ectsCourse = 5.0f, levelCode = "B1", teacherId = 1, description = "Bases de l'algorithmie"))
+                        courseDaoProvider.get().insert(CourseEntity(nameCourse = "Base de données", ectsCourse = 4.0f, levelCode = "B2", teacherId = 2, description = "Introduction à SQL"))
+                        courseDaoProvider.get().insert(CourseEntity(nameCourse = "Développement Web", ectsCourse = 6.0f, levelCode = "B3", teacherId = 1, description = "HTML, CSS, JavaScript"))
                     }
                 }
             })

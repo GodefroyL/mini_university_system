@@ -6,8 +6,7 @@ import com.tumme.scrudstudents.data.local.model.StudentEntity
 import com.tumme.scrudstudents.data.local.model.TeacherEntity
 import com.tumme.scrudstudents.data.repository.SCRUDRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.* 
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,6 +24,13 @@ class AuthViewModel @Inject constructor(
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState = _authState.asStateFlow()
+
+    /**
+     * Exposes a flow of unique level codes from the courses for the registration dropdown.
+     */
+    val availableLevels: StateFlow<List<String>> = repository.getAllCourses()
+        .map { courses -> courses.map { it.levelCode }.distinct().filter { it.isNotBlank() } }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun login(email: String, password: String, role: UserRole) {
         viewModelScope.launch {
@@ -55,13 +61,22 @@ class AuthViewModel @Inject constructor(
     fun registerStudent(student: StudentEntity) {
         viewModelScope.launch {
             repository.insertStudent(student)
-            // Ideally, you would log the user in directly here
+            val newStudent = repository.authenticateStudent(student.email, student.password)
+            newStudent?.let {
+                val user = LoggedInUser(it.idStudent, UserRole.STUDENT, it.levelCode)
+                _authState.value = AuthState.Authenticated(user)
+            }
         }
     }
 
     fun registerTeacher(teacher: TeacherEntity) {
         viewModelScope.launch {
             repository.insertTeacher(teacher)
+            val newTeacher = repository.authenticateTeacher(teacher.email, teacher.password)
+            newTeacher?.let {
+                val user = LoggedInUser(it.teacherId, UserRole.TEACHER)
+                _authState.value = AuthState.Authenticated(user)
+            }
         }
     }
 }

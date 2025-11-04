@@ -12,7 +12,6 @@ import androidx.navigation.NavController
 import com.tumme.scrudstudents.data.local.model.CourseEntity
 import com.tumme.scrudstudents.data.local.model.StudentEntity
 import com.tumme.scrudstudents.ui.components.TableHeader
-import com.tumme.scrudstudents.ui.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,12 +38,9 @@ fun SubscribeListScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Subscriptions") }) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate(Routes.SUBSCRIBE_FORM) }) {
-                Text("+")
-            }
-        }
+        topBar = { TopAppBar(title = { Text("Subscriptions") }) }
+        // The FloatingActionButton has been removed as it referenced a route
+        // that is no longer part of the new role-based navigation flow.
     ) { padding ->
         Column(
             modifier = Modifier

@@ -2,51 +2,51 @@ package com.tumme.scrudstudents.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
+import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
 import com.tumme.scrudstudents.ui.auth.LoggedInUser
 import com.tumme.scrudstudents.ui.auth.LoginScreen
 import com.tumme.scrudstudents.ui.auth.RegisterScreen
 import com.tumme.scrudstudents.ui.auth.UserRole
-import com.tumme.scrudstudents.ui.course.CourseDetailScreen
 import com.tumme.scrudstudents.ui.course.CourseFormScreen
-import com.tumme.scrudstudents.ui.course.CourseListScreen
-import com.tumme.scrudstudents.ui.student.StudentDetailScreen
-import com.tumme.scrudstudents.ui.student.StudentFormScreen
 import com.tumme.scrudstudents.ui.student.StudentHomeScreen
-import com.tumme.scrudstudents.ui.student.StudentListScreen
-import com.tumme.scrudstudents.ui.subscribe.SubscribeFormScreen
-import com.tumme.scrudstudents.ui.subscribe.SubscribeListScreen
+import com.tumme.scrudstudents.ui.teacher.TeacherCourseDetailScreen
 import com.tumme.scrudstudents.ui.teacher.TeacherHomeScreen
 
+// --- Navigation Routes ---
 object Routes {
+    // Auth
     const val LOGIN = "login"
     const val REGISTER = "register"
+
+    // Graph Roots
+    const val STUDENT_GRAPH = "student_graph"
+    const val TEACHER_GRAPH = "teacher_graph"
+
+    // Student Routes
     const val STUDENT_HOME = "student_home/{studentId}/{studentLevel}"
+
+    // Teacher Routes
     const val TEACHER_HOME = "teacher_home/{teacherId}"
-    const val STUDENT_LIST = "student_list"
-    const val STUDENT_FORM = "student_form"
-    const val STUDENT_DETAIL = "student_detail/{studentId}"
-    const val COURSE_LIST = "course_list"
-    const val COURSE_FORM = "course_form"
-    const val COURSE_DETAIL = "course_detail/{courseId}"
-    const val SUBSCRIBE_LIST = "subscribe_list"
-    const val SUBSCRIBE_FORM = "subscribe_form"
+    const val DECLARE_COURSE = "declare_course"
+    const val TEACHER_COURSE_DETAIL = "teacher_course_detail/{courseId}"
 }
 
+/**
+ * The main navigation host for the entire application.
+ * Handles authentication and redirects to the appropriate role-based navigation graph.
+ */
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(navController, startDestination = Routes.LOGIN, modifier = modifier) {
+        // --- Authentication Flow ---
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { user: LoggedInUser ->
                     val route = when (user.role) {
-                        UserRole.STUDENT -> "student_home/${user.id}/${user.level}"
-                        UserRole.TEACHER -> "teacher_home/${user.id}"
-                        else -> throw IllegalArgumentException("Unknown user role")
+                        UserRole.STUDENT -> Routes.STUDENT_GRAPH
+                        UserRole.TEACHER -> Routes.TEACHER_GRAPH
                     }
                     navController.navigate(route) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
@@ -57,72 +57,79 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
         }
         composable(Routes.REGISTER) {
             RegisterScreen(
-                onRegisterSuccess = { role ->
-                    navController.navigate(Routes.LOGIN) { // Should navigate to home directly
-                        popUpTo(Routes.REGISTER) { inclusive = true }
+                onRegisterSuccess = { user: LoggedInUser ->
+                    val route = when (user.role) {
+                        UserRole.STUDENT -> Routes.STUDENT_GRAPH
+                        UserRole.TEACHER -> Routes.TEACHER_GRAPH
                     }
-                },
-                onNavigateToLogin = { navController.navigate(Routes.LOGIN) }
+                    navController.navigate(route) {
+                        popUpTo(Routes.LOGIN) { inclusive = true }
+                    }
+                 },
+                onNavigateToLogin = { navController.popBackStack() }
             )
         }
+
+        // --- Role-based Sub-graphs ---
+        studentGraph(navController)
+        teacherGraph(navController)
+    }
+}
+
+/**
+ * Defines the navigation graph for the Student role.
+ */
+private fun NavGraphBuilder.studentGraph(navController: NavHostController) {
+    navigation(
+        route = Routes.STUDENT_GRAPH,
+        startDestination = Routes.STUDENT_HOME
+    ) {
         composable(
             route = Routes.STUDENT_HOME,
             arguments = listOf(
                 navArgument("studentId") { type = NavType.IntType },
-                navArgument("studentLevel") { type = NavType.StringType }
+                navArgument("studentLevel") { type = NavType.StringType; nullable = true }
             )
-        ) { backStackEntry ->
-            val studentId = backStackEntry.arguments?.getInt("studentId") ?: 0
-            val studentLevel = backStackEntry.arguments?.getString("studentLevel") ?: ""
-            StudentHomeScreen(studentId = studentId, studentLevel = studentLevel, navController = navController)
+        ) {
+            val studentId = it.arguments?.getInt("studentId") ?: 0
+            val studentLevel = it.arguments?.getString("studentLevel") ?: ""
+            StudentHomeScreen(
+                studentId = studentId,
+                studentLevel = studentLevel,
+                navController = navController
+            )
         }
+    }
+}
+
+/**
+ * Defines the navigation graph for the Teacher role.
+ */
+private fun NavGraphBuilder.teacherGraph(navController: NavHostController) {
+    navigation(
+        route = Routes.TEACHER_GRAPH,
+        startDestination = Routes.TEACHER_HOME
+    ) {
         composable(
             route = Routes.TEACHER_HOME,
             arguments = listOf(navArgument("teacherId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val teacherId = backStackEntry.arguments?.getInt("teacherId") ?: 0
-            TeacherHomeScreen(teacherId = teacherId, navController = navController)
-        }
-
-        // The rest of the screens are still available for development/testing
-        // but are not part of the main user flow anymore
-        composable(Routes.STUDENT_LIST) {
-            StudentListScreen(
-                onNavigateToForm = { navController.navigate(Routes.STUDENT_FORM) },
-                onNavigateToDetail = { id -> navController.navigate("student_detail/$id") }
+        ) {
+            val teacherId = it.arguments?.getInt("teacherId") ?: 0
+            TeacherHomeScreen(
+                teacherId = teacherId,
+                navController = navController,
+                onDeclareCourse = { navController.navigate(Routes.DECLARE_COURSE) },
+                onCourseClick = { courseId -> navController.navigate(Routes.TEACHER_COURSE_DETAIL.replace("{courseId}", courseId.toString())) }
             )
         }
-        composable(Routes.STUDENT_FORM) {
-            StudentFormScreen(onSaved = { navController.popBackStack() })
-        }
-        composable(
-            route = Routes.STUDENT_DETAIL,
-            arguments = listOf(navArgument("studentId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("studentId") ?: 0
-            StudentDetailScreen(studentId = id, onBack = { navController.popBackStack() })
-        }
-        composable(Routes.COURSE_LIST) {
-            CourseListScreen(
-                onNavigateToForm = { navController.navigate(Routes.COURSE_FORM) },
-                onNavigateToDetail = { id -> navController.navigate("course_detail/$id") }
-            )
-        }
-        composable(Routes.COURSE_FORM) {
+        composable(Routes.DECLARE_COURSE) {
             CourseFormScreen(onSaved = { navController.popBackStack() })
         }
         composable(
-            route = Routes.COURSE_DETAIL,
+            route = Routes.TEACHER_COURSE_DETAIL,
             arguments = listOf(navArgument("courseId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("courseId") ?: 0
-            CourseDetailScreen(courseId = id, onBack = { navController.popBackStack() })
-        }
-        composable(Routes.SUBSCRIBE_LIST) {
-            SubscribeListScreen(navController = navController)
-        }
-        composable(Routes.SUBSCRIBE_FORM) {
-            SubscribeFormScreen(onSaved = { navController.popBackStack() })
+        ) {
+            TeacherCourseDetailScreen()
         }
     }
 }

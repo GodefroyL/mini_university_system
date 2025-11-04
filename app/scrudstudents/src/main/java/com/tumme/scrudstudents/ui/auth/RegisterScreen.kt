@@ -7,55 +7,50 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tumme.scrudstudents.data.local.model.Gender
-import com.tumme.scrudstudents.data.local.model.LevelCourse
 import com.tumme.scrudstudents.data.local.model.StudentEntity
 import com.tumme.scrudstudents.data.local.model.TeacherEntity
-import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel = hiltViewModel(),
-    onRegisterSuccess: (UserRole) -> Unit,
+    onRegisterSuccess: (LoggedInUser) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
     val authState by viewModel.authState.collectAsState()
+    val availableLevels by viewModel.availableLevels.collectAsState()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
+    var selectedLevel by remember { mutableStateOf("") }
+    var dateOfBirth by remember { mutableStateOf("") }
+    var selectedGender by remember { mutableStateOf(Gender.Male) }
+    var genderMenuExpanded by remember { mutableStateOf(false) }
+    var levelMenuExpanded by remember { mutableStateOf(false) }
     var selectedRole by remember { mutableStateOf(UserRole.STUDENT) }
 
-    // Student-specific state
-    var studentLevel by remember { mutableStateOf(LevelCourse.B1) }
-
-    // Handle navigation automatically when authenticated
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
-            onRegisterSuccess((authState as AuthState.Authenticated).user.role)
+            onRegisterSuccess((authState as AuthState.Authenticated).user)
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(32.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Register", style = MaterialTheme.typography.headlineLarge)
 
-            // Role selection tabs
             TabRow(selectedTabIndex = selectedRole.ordinal) {
                 Tab(selected = selectedRole == UserRole.STUDENT, onClick = { selectedRole = UserRole.STUDENT }) {
                     Text("Student", modifier = Modifier.padding(16.dp))
@@ -68,65 +63,90 @@ fun RegisterScreen(
             OutlinedTextField(value = firstName, onValueChange = { firstName = it }, label = { Text("First Name") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = lastName, onValueChange = { lastName = it }, label = { Text("Last Name") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
 
-            // Student-specific fields
-            if (selectedRole == UserRole.STUDENT) {
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                    OutlinedTextField(
-                        value = studentLevel.value,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Level") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
-                    )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        LevelCourse.entries.forEach { level ->
-                            DropdownMenuItem(text = { Text(level.value) }, onClick = { studentLevel = level; expanded = false })
-                        }
+            // Gender is common to both roles
+            ExposedDropdownMenuBox(expanded = genderMenuExpanded, onExpandedChange = { genderMenuExpanded = !genderMenuExpanded }) {
+                OutlinedTextField(
+                    value = selectedGender.value,
+                    onValueChange = {},
+                    label = { Text("Gender") },
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderMenuExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(expanded = genderMenuExpanded, onDismissRequest = { genderMenuExpanded = false }) {
+                    Gender.values().forEach { gender ->
+                        DropdownMenuItem(
+                            text = { Text(gender.value) },
+                            onClick = {
+                                selectedGender = gender
+                                genderMenuExpanded = false
+                            }
+                        )
                     }
                 }
             }
 
-            when (val state = authState) {
-                is AuthState.Loading -> {
-                    CircularProgressIndicator()
-                }
-                is AuthState.Error -> {
-                    Text(text = state.message, color = MaterialTheme.colorScheme.error)
-                }
-                else -> {
-                    Button(
-                        onClick = {
-                            if (selectedRole == UserRole.STUDENT) {
-                                val student = StudentEntity(
-                                    firstName = firstName,
-                                    lastName = lastName,
-                                    email = email,
-                                    password = password,
-                                    levelCode = studentLevel.name,
-                                    dateOfBirth = Date().time, // Dummy date
-                                    gender = Gender.NotConcerned
-                                )
-                                viewModel.registerStudent(student)
-                            } else {
-                                val teacher = TeacherEntity(
-                                    firstName = firstName,
-                                    lastName = lastName,
-                                    email = email,
-                                    password = password
-                                )
-                                viewModel.registerTeacher(teacher)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = authState !is AuthState.Loading
-                    ) {
-                        Text("Register")
+            if (selectedRole == UserRole.STUDENT) {
+                // Fields specific to Students
+                ExposedDropdownMenuBox(expanded = levelMenuExpanded, onExpandedChange = { levelMenuExpanded = !levelMenuExpanded }) {
+                    OutlinedTextField(
+                        value = selectedLevel,
+                        onValueChange = {},
+                        label = { Text("Level") },
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = levelMenuExpanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(expanded = levelMenuExpanded, onDismissRequest = { levelMenuExpanded = false }) {
+                        availableLevels.forEach { level ->
+                            DropdownMenuItem(
+                                text = { Text(level) },
+                                onClick = {
+                                    selectedLevel = level
+                                    levelMenuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
+                OutlinedTextField(
+                    value = dateOfBirth,
+                    onValueChange = { dateOfBirth = it },
+                    label = { Text("Date of Birth (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Button(
+                onClick = {
+                    if (selectedRole == UserRole.STUDENT) {
+                        val student = StudentEntity(
+                            firstName = firstName,
+                            lastName = lastName,
+                            email = email,
+                            password = password,
+                            levelCode = selectedLevel,
+                            dateOfBirth = dateOfBirth,
+                            gender = selectedGender
+                        )
+                        viewModel.registerStudent(student)
+                    } else {
+                        val teacher = TeacherEntity(
+                            firstName = firstName,
+                            lastName = lastName,
+                            email = email,
+                            password = password,
+                            gender = selectedGender // Fix: Added missing gender parameter
+                        )
+                        viewModel.registerTeacher(teacher)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = authState !is AuthState.Loading
+            ) {
+                Text("Register")
             }
 
             TextButton(onClick = onNavigateToLogin) {

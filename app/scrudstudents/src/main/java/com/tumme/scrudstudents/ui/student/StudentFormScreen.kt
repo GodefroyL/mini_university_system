@@ -50,7 +50,7 @@ fun StudentFormScreen(
     var dobText by remember { mutableStateOf("2000-01-01") }
 
     /** State for the student's gender selection. */
-    var gender by remember { mutableStateOf(Gender.NotConcerned) }
+    var gender by remember { mutableStateOf(Gender.Male) }
 
     /** Date formatter for parsing the date of birth string. */
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -87,9 +87,9 @@ fun StudentFormScreen(
 
         /**
          * Text field for entering the student's date of birth.
-         * Expected format: yyyy-MM-dd
+         * Expected format: dd/mm/yyyy
          */
-        TextField(value = dobText, onValueChange = { dobText = it }, label = { Text("Date of birth (yyyy-MM-dd)") })
+        TextField(value = dobText, onValueChange = { dobText = it }, label = { Text("Date of birth (dd/mm/yyyy)") })
         Spacer(Modifier.height(8.dp))
 
         /**
@@ -124,7 +124,7 @@ fun StudentFormScreen(
          * Options: Male, Female, NotConcerned
          */
         Row {
-            listOf(Gender.Male, Gender.Female, Gender.NotConcerned).forEach { g ->
+            listOf(Gender.Male, Gender.Female).forEach { g ->
                 Button(onClick = { gender = g }, modifier = Modifier.padding(end = 8.dp)) {
                     Text(g.value)
                 }
@@ -137,14 +137,13 @@ fun StudentFormScreen(
          * Triggers the onSaved callback after insertion.
          */
         Button(onClick = {
-            val dob = dateFormat.parse(dobText) ?: Date()
             val student = StudentEntity(
                 idStudent = id,
                 lastName = lastName,
                 firstName = firstName,
                 email = email,
                 password = password, // In a real app, hash this
-                dateOfBirth = dob.time,
+                dateOfBirth = dobText,
                 gender = gender,
                 levelCode = levelCode.name
             )

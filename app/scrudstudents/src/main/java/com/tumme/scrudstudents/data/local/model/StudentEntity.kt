@@ -13,7 +13,7 @@ data class StudentEntity(
     val lastName: String,
     val email: String,
     val password: String,  // Dans une application réelle, stockez un hash
-    val dateOfBirth: Long,  // Timestamp
+    val dateOfBirth: String,  // Timestamp
     @field:TypeConverters(Converters::class)
     val gender: Gender,
     val levelCode: String,  // Code du niveau (P1, B1, etc.)
