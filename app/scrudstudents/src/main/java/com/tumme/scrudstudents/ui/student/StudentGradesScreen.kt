@@ -17,18 +17,28 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.DecimalFormat
 
+/**
+ * A screen that displays a student's grades for all their enrolled courses.
+ * It also shows the calculated weighted average grade.
+ *
+ * @param studentId The ID of the student whose grades are to be displayed.
+ * @param viewModel The ViewModel that provides the data for this screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentGradesScreen(
     studentId: Int,
-    studentLevel: String,
+    studentLevel: String, // Note: studentLevel is passed but not used here, could be removed.
     viewModel: StudentSubscriptionsViewModel = hiltViewModel()
 ) {
+    // Observe the list of student's subscriptions (which include grades) from the ViewModel.
     val subscriptions by viewModel.subscriptions.collectAsState()
+    // Observe the calculated weighted average from the ViewModel.
     val weightedAverage by viewModel.weightedAverage.collectAsState()
+    // Formatter for displaying the average grade neatly.
     val averageFormatter = remember { DecimalFormat("#.##") }
 
-    // Explicitly load data when the screen is composed with a valid studentId
+    // When the screen is first composed or the studentId changes, trigger the ViewModel to load the data.
     LaunchedEffect(studentId) {
         viewModel.loadStudentData(studentId)
     }
@@ -44,16 +54,17 @@ fun StudentGradesScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Header
+            // Table Header
             Row(Modifier.background(MaterialTheme.colorScheme.primaryContainer)) {
                 TableCell(text = "Course", weight = .6f, fontWeight = FontWeight.Bold)
                 TableCell(text = "Grade", weight = .4f, fontWeight = FontWeight.Bold)
             }
 
-            // Grades Table
+            // Table Body: Iterate through each subscription to display the grade.
             subscriptions.forEach { subscription ->
                 Row {
                     TableCell(text = subscription.course.nameCourse, weight = .6f)
+                    // Display "N/A" if the course has not been graded yet (score is 0 or less).
                     val scoreText = if (subscription.subscribe.score > 0) {
                         subscription.subscribe.score.toString()
                     } else {
@@ -63,9 +74,9 @@ fun StudentGradesScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f)) // Pushes the footer to the bottom
 
-            // Footer with Weighted Average
+            // Footer displaying the overall weighted average.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -80,6 +91,13 @@ fun StudentGradesScreen(
     }
 }
 
+/**
+ * A helper composable to create a single cell in a table-like structure.
+ * It takes care of borders, padding, and text styling.
+ * @param text The text to display in the cell.
+ * @param weight The column weight for sizing.
+ * @param fontWeight The font weight for the text.
+ */
 @Composable
 fun RowScope.TableCell(
     text: String,

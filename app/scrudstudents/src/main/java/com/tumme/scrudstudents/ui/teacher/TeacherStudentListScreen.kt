@@ -17,6 +17,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tumme.scrudstudents.data.local.model.StudentWithScore
 
+/**
+ * A screen where a teacher can view and edit the grades of all students enrolled in a specific course.
+ *
+ * @param courseId The ID of the course for which to display the students.
+ * @param onBack A lambda function to be invoked to navigate back to the previous screen.
+ * @param viewModel The ViewModel providing the data and business logic for this screen.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherStudentListScreen(
@@ -24,12 +31,15 @@ fun TeacherStudentListScreen(
     onBack: () -> Unit,
     viewModel: TeacherViewModel = hiltViewModel()
 ) {
+    // Observe UI state from the ViewModel.
     val students by viewModel.studentsForCourse.collectAsState()
     val course by viewModel.currentCourse.collectAsState()
     val teacher by viewModel.currentTeacher.collectAsState()
 
+    // Set up a scroll behavior for the top app bar to collapse on scroll.
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
+    // When the screen is first composed or the courseId changes, trigger the ViewModel to load the students.
     LaunchedEffect(courseId) {
         viewModel.loadStudentsForCourse(courseId)
     }
@@ -58,6 +68,7 @@ fun TeacherStudentListScreen(
             )
         }
     ) { padding ->
+        // Display the list of students in a LazyColumn for better performance.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -70,12 +81,21 @@ fun TeacherStudentListScreen(
     }
 }
 
+/**
+ * A private composable representing a single row in the student grade list.
+ * It displays the student's name and a text field to edit their score.
+ *
+ * @param studentWithScore The data object containing the student's details and their score.
+ * @param courseId The ID of the current course.
+ * @param viewModel The ViewModel instance to call when updating the grade.
+ */
 @Composable
 private fun StudentGradeRow(
     studentWithScore: StudentWithScore,
     courseId: Int,
     viewModel: TeacherViewModel
 ) {
+    // State for the score text field. It's initialized with the student's current score.
     var score by remember(studentWithScore.score) {
         mutableStateOf(studentWithScore.score?.toString() ?: "")
     }
@@ -101,6 +121,7 @@ private fun StudentGradeRow(
             ),
             modifier = Modifier.width(100.dp)
         )
+        // The save button is only enabled if the score is a valid number.
         Button(
             onClick = { score.toFloatOrNull()?.let { viewModel.updateScore(studentWithScore.idStudent, courseId, it) } },
             modifier = Modifier.padding(start = 8.dp)
