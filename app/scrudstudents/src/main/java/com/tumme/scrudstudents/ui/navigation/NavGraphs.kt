@@ -4,33 +4,28 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
-import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.*
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.tumme.scrudstudents.ui.auth.LoggedInUser
 import com.tumme.scrudstudents.ui.auth.LoginScreen
 import com.tumme.scrudstudents.ui.auth.RegisterScreen
 import com.tumme.scrudstudents.ui.auth.UserRole
 import com.tumme.scrudstudents.ui.course.CourseFormScreen
 import com.tumme.scrudstudents.ui.student.*
 import com.tumme.scrudstudents.ui.teacher.StudentListByCourseScreen
-import com.tumme.scrudstudents.ui.teacher.TeacherCourseDetailScreen
 import com.tumme.scrudstudents.ui.teacher.TeacherHomeScreen
 
 object Routes {
@@ -86,7 +81,7 @@ fun AppNavHost(modifier: Modifier = Modifier) {
         ) {
             val studentId = it.arguments?.getInt("studentId") ?: 0
             val studentLevel = it.arguments?.getString("studentLevel") ?: ""
-            StudentDashboardScreen(studentId = studentId, studentLevel = studentLevel)
+            StudentDashboardScreen(navController = navController, studentId = studentId, studentLevel = studentLevel)
         }
 
         composable(
@@ -117,11 +112,40 @@ fun AppNavHost(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun StudentDashboardScreen(studentId: Int, studentLevel: String) {
+private fun StudentDashboardScreen(
+    navController: NavHostController,
+    studentId: Int,
+    studentLevel: String,
+    viewModel: StudentDashboardViewModel = hiltViewModel()
+) {
     val studentNavController = rememberNavController()
-    Scaffold(bottomBar = { StudentBottomBar(navController = studentNavController) }) {
-        StudentDashboardNavHost(studentNavController, it, studentId, studentLevel)
+    val student by viewModel.student.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    student?.let {
+                        Text("${it.firstName} ${it.lastName} - ($studentLevel)")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        navController.navigate(Routes.LOGIN) {
+                            popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }) {
+                        Icon(Icons.Default.Logout, contentDescription = "Logout")
+                    }
+                }
+            )
+        },
+        bottomBar = { StudentBottomBar(navController = studentNavController) }
+    ) { padding ->
+        StudentDashboardNavHost(studentNavController, padding, studentId, studentLevel)
     }
 }
 
@@ -159,12 +183,16 @@ private fun StudentDashboardNavHost(
     studentId: Int,
     studentLevel: String
 ) {
-    NavHost(navController = navController, startDestination = Routes.STUDENT_COURSES, modifier = Modifier.padding(padding)) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.STUDENT_COURSES,
+        modifier = Modifier.padding(padding)
+    ) {
         composable(Routes.STUDENT_COURSES) {
-            StudentCourseListScreen(levelCode = studentLevel)
+            StudentCourseListScreen(studentId = studentId)
         }
         composable(Routes.STUDENT_SUBSCRIPTIONS) {
-            StudentSubscriptionsScreen(studentId = studentId)
+            StudentSubscriptionsScreen(studentId = studentId, levelCode = studentLevel)
         }
         composable(Routes.STUDENT_GRADES) {
             StudentGradesScreen(studentId = studentId, studentLevel = studentLevel)

@@ -1,6 +1,5 @@
 package com.tumme.scrudstudents.ui.course
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tumme.scrudstudents.data.local.model.CourseEntity
@@ -18,8 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CourseListViewModel @Inject constructor(
-    private val repository: SCRUDRepository,
-    savedStateHandle: SavedStateHandle
+    private val repository: SCRUDRepository
 ) : ViewModel() {
 
     private val _allCourses = MutableStateFlow<List<CourseEntity>>(emptyList())
@@ -34,16 +32,8 @@ class CourseListViewModel @Inject constructor(
     private val _enrollmentMessage = MutableStateFlow<String?>(null)
     val enrollmentMessage: StateFlow<String?> = _enrollmentMessage.asStateFlow()
 
-    private val studentId: Int = savedStateHandle.get<Int>("studentId") ?: 0
-
     init {
-        val levelCode = savedStateHandle.get<String>("levelCode") ?: ""
-        if (levelCode.isNotEmpty()) {
-            repository.getCoursesWithTeacherByLevel(levelCode)
-                .onEach { _coursesWithTeachers.value = it }
-                .launchIn(viewModelScope)
-        }
-
+        // Load data that is always needed
         repository.getAllTeachers()
             .onEach { _teachers.value = it }
             .launchIn(viewModelScope)
@@ -53,13 +43,23 @@ class CourseListViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    fun enrollInCourse(courseId: Int) {
+    fun loadCoursesForLevel(levelCode: String) {
+        if (levelCode.isNotEmpty()) {
+            repository.getCoursesWithTeacherByLevel(levelCode)
+                .onEach { _coursesWithTeachers.value = it }
+                .launchIn(viewModelScope)
+        } else {
+            _coursesWithTeachers.value = emptyList()
+        }
+    }
+
+    fun enrollInCourse(studentId: Int, courseId: Int) {
         viewModelScope.launch {
             try {
                 repository.enrollInCourse(studentId, courseId)
                 _enrollmentMessage.value = "Successfully enrolled!"
             } catch (e: Exception) {
-                _enrollmentMessage.value = "Enrollment failed."
+                _enrollmentMessage.value = "Enrollment failed: ${e.message}"
             }
         }
     }

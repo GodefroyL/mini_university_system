@@ -30,17 +30,18 @@ object AppModule {
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    // Use a direct transaction to ensure data is written before the DB is used.
                     db.beginTransaction()
                     try {
+                        // Pre-populate teachers
                         db.execSQL("INSERT INTO teachers (firstName, lastName, email, password, gender, registrationDate) VALUES ('Michel', 'Vincent', 'm.vincent@univ.com', 'password', 'Male', 1672531200000)")
                         db.execSQL("INSERT INTO teachers (firstName, lastName, email, password, gender, registrationDate) VALUES ('Remi', 'Pasquier', 'remi.pasquier@univ.com', 'password', 'Male', 1672531200000)")
-                        // Use registrationData to match the schema
+                        // Pre-populate students
                         db.execSQL("INSERT INTO students (firstName, lastName, email, password, dateOfBirth, gender, levelCode, registrationData) VALUES ('Louis', 'Dupont', 'louis.dupont@example.com', 'password', '2001-11-09', 'Male', 'B1', 1672531200000)")
                         db.execSQL("INSERT INTO students (firstName, lastName, email, password, dateOfBirth, gender, levelCode, registrationData) VALUES ('Jehanne', 'de Boisgarnier', 'j.dbg@example.com', 'password', '2005-03-04', 'Female', 'B2', 1672531200000)")
-                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description) VALUES ('Algorithmie', 5.0, 'B1', 'Bases de l\'\'algorithmie')")
-                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description) VALUES ('Base de données', 4.0, 'B2', 'Introduction à SQL')")
-                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description) VALUES ('Développement Web', 6.0, 'B3', 'HTML, CSS, JavaScript')")
+                        // Pre-populate courses and assign them to teachers (assuming teacher IDs are 1 and 2)
+                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description, teacherId) VALUES ('Algorithmie', 5.0, 'B1', 'Bases de l\'\'algorithmie', 1)")
+                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description, teacherId) VALUES ('Base de données', 4.0, 'B2', 'Introduction à SQL', 2)")
+                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description, teacherId) VALUES ('Développement Web', 6.0, 'B3', 'HTML, CSS, JavaScript', 1)")
                         db.setTransactionSuccessful()
                     } finally {
                         db.endTransaction()
