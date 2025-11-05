@@ -26,17 +26,18 @@ fun StudentSubscriptionsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Load courses for the student's level
-    LaunchedEffect(levelCode) {
-        viewModel.loadCoursesForLevel(levelCode)
+    // Load available courses reactively
+    LaunchedEffect(studentId, levelCode) {
+        viewModel.loadAvailableCourses(studentId, levelCode)
     }
 
-    // Show snackbar on enrollment confirmation
+    // Show snackbar on enrollment confirmation and clear selection
     LaunchedEffect(enrollmentMessage) {
         enrollmentMessage?.let {
             scope.launch {
                 snackbarHostState.showSnackbar(it)
                 viewModel.clearEnrollmentMessage()
+                selectedCourse = null // Clear the selection for immediate visual feedback
             }
         }
     }

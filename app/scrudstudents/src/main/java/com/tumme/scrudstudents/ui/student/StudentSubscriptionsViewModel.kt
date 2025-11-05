@@ -1,6 +1,5 @@
 package com.tumme.scrudstudents.ui.student
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tumme.scrudstudents.data.local.model.SubscribeWithCourse
@@ -12,8 +11,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StudentSubscriptionsViewModel @Inject constructor(
-    private val repository: SCRUDRepository,
-    savedStateHandle: SavedStateHandle
+    private val repository: SCRUDRepository
 ) : ViewModel() {
 
     private val _subscriptions = MutableStateFlow<List<SubscribeWithCourse>>(emptyList())
@@ -25,20 +23,20 @@ class StudentSubscriptionsViewModel @Inject constructor(
     private val _weightedAverage = MutableStateFlow(0f)
     val weightedAverage: StateFlow<Float> = _weightedAverage.asStateFlow()
 
-    init {
-        val studentId: Int = savedStateHandle.get<Int>("studentId") ?: 0
-        if (studentId > 0) {
-            repository.getSubscriptionsWithCourses(studentId)
-                .onEach {
-                    _subscriptions.value = it
-                    calculateWeightedAverage(it)
-                }
-                .launchIn(viewModelScope)
-        }
+    fun loadStudentData(studentId: Int) {
+        if (studentId <= 0) return
 
         // Load all teachers to find them by ID later
         repository.getAllTeachers()
             .onEach { _teachers.value = it }
+            .launchIn(viewModelScope)
+
+        // Load student's subscriptions and calculate average
+        repository.getSubscriptionsWithCourses(studentId)
+            .onEach {
+                _subscriptions.value = it
+                calculateWeightedAverage(it)
+            }
             .launchIn(viewModelScope)
     }
 

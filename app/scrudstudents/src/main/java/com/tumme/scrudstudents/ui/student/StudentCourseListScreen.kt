@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -15,10 +13,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 @Composable
 fun StudentCourseListScreen(
     studentId: Int,
-    viewModel: StudentSubscriptionsViewModel = hiltViewModel() // Use the correct ViewModel
+    viewModel: StudentSubscriptionsViewModel = hiltViewModel()
 ) {
     val subscriptions by viewModel.subscriptions.collectAsState()
-    val teachers by viewModel.teachers.collectAsState() // Get the list of all teachers
+    val teachers by viewModel.teachers.collectAsState()
+
+    // Explicitly load data when the screen is composed with a valid studentId
+    LaunchedEffect(studentId) {
+        viewModel.loadStudentData(studentId)
+    }
 
     Scaffold(
         topBar = {
@@ -33,7 +36,6 @@ fun StudentCourseListScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(subscriptions) { subscription ->
-                // Find the teacher for the current course and format their name
                 val teacher = teachers.find { it.teacherId == subscription.course.teacherId }
                 val teacherDisplayName = teacher?.let { "${it.firstName} ${it.lastName}" } ?: "N/A"
 
@@ -42,7 +44,6 @@ fun StudentCourseListScreen(
                         Text(text = subscription.course.nameCourse, style = MaterialTheme.typography.titleLarge)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            // Use the clean, pre-formatted variable
                             text = "Professor: $teacherDisplayName",
                             style = MaterialTheme.typography.bodyLarge
                         )
@@ -52,7 +53,7 @@ fun StudentCourseListScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = subscription.course.description ?: "", // Handle possible null value
+                            text = subscription.course.description ?: "",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

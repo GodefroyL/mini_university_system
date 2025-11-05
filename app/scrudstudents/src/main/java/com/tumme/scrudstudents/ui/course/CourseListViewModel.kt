@@ -7,11 +7,7 @@ import com.tumme.scrudstudents.data.local.model.TeacherEntity
 import com.tumme.scrudstudents.data.model.CourseWithTeacher
 import com.tumme.scrudstudents.data.repository.SCRUDRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,7 +29,6 @@ class CourseListViewModel @Inject constructor(
     val enrollmentMessage: StateFlow<String?> = _enrollmentMessage.asStateFlow()
 
     init {
-        // Load data that is always needed
         repository.getAllTeachers()
             .onEach { _teachers.value = it }
             .launchIn(viewModelScope)
@@ -43,14 +38,21 @@ class CourseListViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    fun loadCoursesForLevel(levelCode: String) {
-        if (levelCode.isNotEmpty()) {
-            repository.getCoursesWithTeacherByLevel(levelCode)
-                .onEach { _coursesWithTeachers.value = it }
-                .launchIn(viewModelScope)
-        } else {
+    fun loadAvailableCourses(studentId: Int, levelCode: String) {
+        if (levelCode.isEmpty() || studentId <= 0) {
             _coursesWithTeachers.value = emptyList()
+            return
         }
+
+        val allCoursesForLevelFlow = repository.getCoursesWithTeacherByLevel(levelCode)
+        val studentSubscriptionsFlow = repository.getSubscriptionsWithCourses(studentId)
+
+        allCoursesForLevelFlow.combine(studentSubscriptionsFlow) { allCourses, subscriptions ->
+            val subscribedCourseIds = subscriptions.map { it.course.idCourse }.toSet()
+            allCourses.filter { it.course.idCourse !in subscribedCourseIds }
+        }.onEach { availableCourses ->
+            _coursesWithTeachers.value = availableCourses
+        }.launchIn(viewModelScope)
     }
 
     fun enrollInCourse(studentId: Int, courseId: Int) {
