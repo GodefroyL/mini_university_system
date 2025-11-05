@@ -1,51 +1,86 @@
 package com.tumme.scrudstudents.ui.course
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tumme.scrudstudents.data.local.model.CourseEntity
 import com.tumme.scrudstudents.data.local.model.TeacherEntity
+import com.tumme.scrudstudents.data.model.CourseWithTeacher
 import com.tumme.scrudstudents.data.repository.SCRUDRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * ViewModel for course-related UI composables.
- * Uses the repository to fetch and manage course data.
- * Injected by Hilt for dependency management.
- */
 @HiltViewModel
 class CourseListViewModel @Inject constructor(
-    private val repo: SCRUDRepository, // Repository for database operations
+    private val repository: SCRUDRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    /** StateFlow exposing the list of courses from the database. */
-    private val _courses: StateFlow<List<CourseEntity>> =
-        repo.getAllCourses().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val courses: StateFlow<List<CourseEntity>> = _courses
+    private val _allCourses = MutableStateFlow<List<CourseEntity>>(emptyList())
+    val allCourses: StateFlow<List<CourseEntity>> = _allCourses.asStateFlow()
 
-    /** StateFlow exposing the list of teachers from the database. */
-    private val _teachers: StateFlow<List<TeacherEntity>> =
-        repo.getAllTeachers().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-    val teachers: StateFlow<List<TeacherEntity>> = _teachers
+    private val _coursesWithTeachers = MutableStateFlow<List<CourseWithTeacher>>(emptyList())
+    val coursesWithTeachers: StateFlow<List<CourseWithTeacher>> = _coursesWithTeachers.asStateFlow()
 
-    /** SharedFlow for UI events and error messages. */
-    private val _events = MutableSharedFlow<String>()
-    val events = _events.asSharedFlow()
+    private val _teachers = MutableStateFlow<List<TeacherEntity>>(emptyList())
+    val teachers: StateFlow<List<TeacherEntity>> = _teachers.asStateFlow()
 
-    /** Deletes a course and emits a success event. */
-    fun deleteCourse(course: CourseEntity) = viewModelScope.launch {
-        repo.deleteCourse(course)
-        _events.emit("Course deleted")
+    private val _enrollmentMessage = MutableStateFlow<String?>(null)
+    val enrollmentMessage: StateFlow<String?> = _enrollmentMessage.asStateFlow()
+
+    private val studentId: Int = savedStateHandle.get<Int>("studentId") ?: 0
+
+    init {
+        val levelCode = savedStateHandle.get<String>("levelCode") ?: ""
+        if (levelCode.isNotEmpty()) {
+            repository.getCoursesWithTeacherByLevel(levelCode)
+                .onEach { _coursesWithTeachers.value = it }
+                .launchIn(viewModelScope)
+        }
+
+        repository.getAllTeachers()
+            .onEach { _teachers.value = it }
+            .launchIn(viewModelScope)
+
+        repository.getAllCourses()
+            .onEach { _allCourses.value = it }
+            .launchIn(viewModelScope)
     }
 
-    /** Inserts a course and emits a success event. */
-    fun insertCourse(course: CourseEntity) = viewModelScope.launch {
-        repo.insertCourse(course)
-        _events.emit("Course inserted")
+    fun enrollInCourse(courseId: Int) {
+        viewModelScope.launch {
+            try {
+                repository.enrollInCourse(studentId, courseId)
+                _enrollmentMessage.value = "Successfully enrolled!"
+            } catch (e: Exception) {
+                _enrollmentMessage.value = "Enrollment failed."
+            }
+        }
     }
 
-    /** Finds a course by ID. */
-    suspend fun findCourse(id: Int) = repo.getCourseById(id)
+    fun clearEnrollmentMessage() {
+        _enrollmentMessage.value = null
+    }
+
+    suspend fun findCourse(courseId: Int): CourseEntity? {
+        return repository.getCourseById(courseId)
+    }
+
+    fun insertCourse(course: CourseEntity) {
+        viewModelScope.launch {
+            repository.insertCourse(course)
+        }
+    }
+
+    fun deleteCourse(course: CourseEntity) {
+        viewModelScope.launch {
+            repository.deleteCourse(course)
+        }
+    }
 }

@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,7 +22,14 @@ class TeacherHomeViewModel @Inject constructor(
 
     fun loadTeacherData(teacherId: Int) {
         viewModelScope.launch {
-            _teacherCourses.value = repository.getCoursesWithStudents(teacherId)
+            // First, get all courses taught by the teacher.
+            val courses = repository.getCoursesByTeacher(teacherId).first()
+
+            // Then, for each of those courses, fetch the associated students.
+            val coursesWithStudentsList = courses.mapNotNull { course ->
+                repository.getCourseWithStudents(course.idCourse)
+            }
+            _teacherCourses.value = coursesWithStudentsList
         }
     }
 }

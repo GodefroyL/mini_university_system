@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.rememberNavController
 import com.tumme.scrudstudents.ui.navigation.AppNavHost
 import com.tumme.scrudstudents.ui.theme.MiniUniversitySystemTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,7 +19,8 @@ class MainActivity : ComponentActivity() {
             MiniUniversitySystemTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    AppNavHost(navController = rememberNavController())
+                    // AppNavHost now manages its own NavController, so we don't pass one in.
+                    AppNavHost()
                 }
             }
         }

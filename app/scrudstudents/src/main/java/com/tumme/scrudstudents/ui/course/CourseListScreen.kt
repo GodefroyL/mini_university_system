@@ -14,23 +14,17 @@ import com.tumme.scrudstudents.ui.student.CourseRow
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CourseListScreen(
-    /**
-     * ViewModel for this screen, injected by Hilt.
-     */
     viewModel: CourseListViewModel = hiltViewModel(),
     onNavigateToForm: () -> Unit = {},
     onNavigateToDetail: (Int) -> Unit = {}
 ) {
-    /** Collects the list of course as state for Compose to observe.*/
-    val courses by viewModel.courses.collectAsState()
+    val courses by viewModel.allCourses.collectAsState()
 
-    // Scaffold provides a basic layout structure with a top bar and FAB.
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Courses") })
         },
         floatingActionButton = {
-            /** FAB to navigate to the course form. */
             FloatingActionButton(onClick = onNavigateToForm) {
                 Text("+")
             }
@@ -42,22 +36,20 @@ fun CourseListScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            /** Displays the table header with column titles.*/
-            TableHeader(cells = listOf("Name", "Level", "ECTS", "Actions"),
+            TableHeader(
+                cells = listOf("Name", "Level", "ECTS", "Actions"),
                 weights = listOf(0.4f, 0.3f, 0.2f, 0.1f)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            /** LazyColumn for efficient rendering of the course list.*/
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(courses) { course ->
-                    /** Displays each course as a row with actions.*/
                     CourseRow(
                         course = course,
-                        onEdit = { /* navigate to form prefilled (not implemented here) */ },
+                        onEdit = { /* Not implemented */ },
                         onDelete = { viewModel.deleteCourse(course) },
                         onView = { onNavigateToDetail(course.idCourse) },
-                        onShare = { /* share intent */ }
+                        onShare = { /* Not implemented */ }
                     )
                 }
             }

@@ -6,6 +6,8 @@ import com.tumme.scrudstudents.data.local.dao.SubscribeDao
 import com.tumme.scrudstudents.data.local.dao.TeacherDao
 import com.tumme.scrudstudents.data.local.model.*
 import com.tumme.scrudstudents.data.model.CourseWithStudents
+import com.tumme.scrudstudents.data.model.CourseWithTeacher
+import com.tumme.scrudstudents.data.local.model.StudentWithScore // Correct import
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
@@ -34,12 +36,13 @@ class SCRUDRepository(
     // Courses
     fun getAllCourses(): Flow<List<CourseEntity>> = courseDao.getAllCourses()
     fun getCoursesByLevel(levelCode: String): Flow<List<CourseEntity>> = courseDao.getCoursesByLevel(levelCode)
+    fun getCoursesWithTeacherByLevel(levelCode: String): Flow<List<CourseWithTeacher>> = courseDao.getCoursesWithTeacherByLevel(levelCode)
     fun getCoursesByTeacher(teacherId: Int): Flow<List<CourseEntity>> = courseDao.getCoursesByTeacher(teacherId)
     suspend fun insertCourse(course: CourseEntity) = courseDao.insert(course)
     suspend fun updateCourse(course: CourseEntity) = courseDao.update(course)
     suspend fun deleteCourse(course: CourseEntity) = courseDao.delete(course)
     suspend fun getCourseById(id: Int) = courseDao.getCourseById(id)
-    suspend fun getCoursesWithStudents(teacherId: Int): List<CourseWithStudents> = courseDao.getCoursesWithStudents(teacherId)
+    suspend fun getCourseWithStudents(courseId: Int): CourseWithStudents? = courseDao.getCourseWithStudents(courseId)
 
     // Subscribes
     fun getAllSubscribes(): Flow<List<SubscribeEntity>> = subscribeDao.getAllSubscribes()
