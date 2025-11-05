@@ -39,11 +39,12 @@ class AuthViewModel @Inject constructor(
                 val user = when (role) {
                     UserRole.STUDENT -> {
                         val student = repository.authenticateStudent(email, password)
-                        student?.let { LoggedInUser(it.idStudent, UserRole.STUDENT, it.levelCode) }
+                        student?.let { LoggedInUser(id = it.idStudent, role = UserRole.STUDENT, level = it.levelCode) }
                     }
                     UserRole.TEACHER -> {
                         val teacher = repository.authenticateTeacher(email, password)
-                        teacher?.let { LoggedInUser(it.teacherId, UserRole.TEACHER) }
+                        // Fix: Explicitly set level to null for teachers
+                        teacher?.let { LoggedInUser(id = it.teacherId, role = UserRole.TEACHER, level = null) }
                     }
                 }
 
@@ -63,7 +64,7 @@ class AuthViewModel @Inject constructor(
             repository.insertStudent(student)
             val newStudent = repository.authenticateStudent(student.email, student.password)
             newStudent?.let {
-                val user = LoggedInUser(it.idStudent, UserRole.STUDENT, it.levelCode)
+                val user = LoggedInUser(id = it.idStudent, role = UserRole.STUDENT, level = it.levelCode)
                 _authState.value = AuthState.Authenticated(user)
             }
         }
@@ -74,7 +75,8 @@ class AuthViewModel @Inject constructor(
             repository.insertTeacher(teacher)
             val newTeacher = repository.authenticateTeacher(teacher.email, teacher.password)
             newTeacher?.let {
-                val user = LoggedInUser(it.teacherId, UserRole.TEACHER)
+                // Fix: Explicitly set level to null for teachers
+                val user = LoggedInUser(id = it.teacherId, role = UserRole.TEACHER, level = null)
                 _authState.value = AuthState.Authenticated(user)
             }
         }

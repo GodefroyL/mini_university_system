@@ -7,7 +7,7 @@ import com.tumme.scrudstudents.data.local.dao.TeacherDao
 import com.tumme.scrudstudents.data.local.model.*
 import com.tumme.scrudstudents.data.model.CourseWithStudents
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 
 class SCRUDRepository(
     private val studentDao: StudentDao,
@@ -59,22 +59,22 @@ class SCRUDRepository(
     fun getStudentsWithScoresByCourse(courseId: Int): Flow<List<StudentWithScore>> = subscribeDao.getStudentsWithScoresByCourse(courseId)
 
     suspend fun calculateFinalGrade(studentId: Int, levelCode: String): Float {
-        val subscriptions = getSubscribesByStudent(studentId).first()
-        val courses = getCoursesByLevel(levelCode).first()
+        val subscriptions = getSubscribesByStudent(studentId).firstOrNull() ?: return 0f
+        val coursesInLevel = getCoursesByLevel(levelCode).firstOrNull() ?: return 0f
 
-        val studentCourses = subscriptions.filter { sub ->
-            courses.any { it.idCourse == sub.courseId }
+        val relevantSubscriptions = subscriptions.filter { sub ->
+            coursesInLevel.any { course -> course.idCourse == sub.courseId }
         }
 
-        if (studentCourses.isEmpty()) return 0f
+        if (relevantSubscriptions.isEmpty()) return 0f
 
-        val totalWeightedScore = studentCourses.sumOf { sub ->
-            val course = courses.find { it.idCourse == sub.courseId }
+        val totalWeightedScore = relevantSubscriptions.sumOf { sub ->
+            val course = coursesInLevel.find { it.idCourse == sub.courseId }
             (sub.score * (course?.ectsCourse ?: 0f)).toDouble()
         }
 
-        val totalEcts = studentCourses.sumOf { sub ->
-            val course = courses.find { it.idCourse == sub.courseId }
+        val totalEcts = relevantSubscriptions.sumOf { sub ->
+            val course = coursesInLevel.find { it.idCourse == sub.courseId }
             (course?.ectsCourse ?: 0f).toDouble()
         }
 

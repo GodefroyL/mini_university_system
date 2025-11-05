@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tumme.scrudstudents.data.local.model.Gender
@@ -22,7 +23,6 @@ fun RegisterScreen(
 ) {
     val authState by viewModel.authState.collectAsState()
     val availableLevels by viewModel.availableLevels.collectAsState()
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var firstName by remember { mutableStateOf("") }
@@ -33,7 +33,17 @@ fun RegisterScreen(
     var genderMenuExpanded by remember { mutableStateOf(false) }
     var levelMenuExpanded by remember { mutableStateOf(false) }
     var selectedRole by remember { mutableStateOf(UserRole.STUDENT) }
+    var dateError by remember { mutableStateOf(false) }
 
+    // Validation des champs
+    val isStudentFormValid = firstName.isNotBlank() && lastName.isNotBlank() &&
+            email.isNotBlank() && password.isNotBlank() &&
+            selectedLevel.isNotBlank() && dateOfBirth.isNotBlank() && !dateError
+    val isTeacherFormValid = firstName.isNotBlank() && lastName.isNotBlank() &&
+            email.isNotBlank() && password.isNotBlank()
+    val isFormValid = if (selectedRole == UserRole.STUDENT) isStudentFormValid else isTeacherFormValid
+
+    // Effet de bord pour gérer la réussite de l'inscription
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
             onRegisterSuccess((authState as AuthState.Authenticated).user)
@@ -51,22 +61,54 @@ fun RegisterScreen(
         ) {
             Text("Register", style = MaterialTheme.typography.headlineLarge)
 
+            // Sélection du rôle (Étudiant/Enseignant)
             TabRow(selectedTabIndex = selectedRole.ordinal) {
-                Tab(selected = selectedRole == UserRole.STUDENT, onClick = { selectedRole = UserRole.STUDENT }) {
+                Tab(
+                    selected = selectedRole == UserRole.STUDENT,
+                    onClick = { selectedRole = UserRole.STUDENT }
+                ) {
                     Text("Student", modifier = Modifier.padding(16.dp))
                 }
-                Tab(selected = selectedRole == UserRole.TEACHER, onClick = { selectedRole = UserRole.TEACHER }) {
+                Tab(
+                    selected = selectedRole == UserRole.TEACHER,
+                    onClick = { selectedRole = UserRole.TEACHER }
+                ) {
                     Text("Teacher", modifier = Modifier.padding(16.dp))
                 }
             }
 
-            OutlinedTextField(value = firstName, onValueChange = { firstName = it }, label = { Text("First Name") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = lastName, onValueChange = { lastName = it }, label = { Text("Last Name") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth())
+            // Champs communs
+            OutlinedTextField(
+                value = firstName,
+                onValueChange = { firstName = it },
+                label = { Text("First Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                label = { Text("Last Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Gender is common to both roles
-            ExposedDropdownMenuBox(expanded = genderMenuExpanded, onExpandedChange = { genderMenuExpanded = !genderMenuExpanded }) {
+            // Sélection du genre
+            ExposedDropdownMenuBox(
+                expanded = genderMenuExpanded,
+                onExpandedChange = { genderMenuExpanded = !genderMenuExpanded }
+            ) {
                 OutlinedTextField(
                     value = selectedGender.value,
                     onValueChange = {},
@@ -75,7 +117,10 @@ fun RegisterScreen(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderMenuExpanded) },
                     modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
-                ExposedDropdownMenu(expanded = genderMenuExpanded, onDismissRequest = { genderMenuExpanded = false }) {
+                ExposedDropdownMenu(
+                    expanded = genderMenuExpanded,
+                    onDismissRequest = { genderMenuExpanded = false }
+                ) {
                     Gender.values().forEach { gender ->
                         DropdownMenuItem(
                             text = { Text(gender.value) },
@@ -88,9 +133,12 @@ fun RegisterScreen(
                 }
             }
 
+            // Champs spécifiques aux étudiants
             if (selectedRole == UserRole.STUDENT) {
-                // Fields specific to Students
-                ExposedDropdownMenuBox(expanded = levelMenuExpanded, onExpandedChange = { levelMenuExpanded = !levelMenuExpanded }) {
+                ExposedDropdownMenuBox(
+                    expanded = levelMenuExpanded,
+                    onExpandedChange = { levelMenuExpanded = !levelMenuExpanded }
+                ) {
                     OutlinedTextField(
                         value = selectedLevel,
                         onValueChange = {},
@@ -99,7 +147,10 @@ fun RegisterScreen(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = levelMenuExpanded) },
                         modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
-                    ExposedDropdownMenu(expanded = levelMenuExpanded, onDismissRequest = { levelMenuExpanded = false }) {
+                    ExposedDropdownMenu(
+                        expanded = levelMenuExpanded,
+                        onDismissRequest = { levelMenuExpanded = false }
+                    ) {
                         availableLevels.forEach { level ->
                             DropdownMenuItem(
                                 text = { Text(level) },
@@ -111,14 +162,28 @@ fun RegisterScreen(
                         }
                     }
                 }
+
                 OutlinedTextField(
                     value = dateOfBirth,
-                    onValueChange = { dateOfBirth = it },
+                    onValueChange = {
+                        dateOfBirth = it
+                        dateError = !it.matches(Regex("""\d{4}-\d{2}-\d{2}"""))
+                    },
                     label = { Text("Date of Birth (YYYY-MM-DD)") },
+                    isError = dateError,
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (dateError) {
+                    Text(
+                        text = "Format incorrect (YYYY-MM-DD)",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp)
+                    )
+                }
             }
 
+            // Bouton d'inscription
             Button(
                 onClick = {
                     if (selectedRole == UserRole.STUDENT) {
@@ -138,17 +203,22 @@ fun RegisterScreen(
                             lastName = lastName,
                             email = email,
                             password = password,
-                            gender = selectedGender // Fix: Added missing gender parameter
+                            gender = selectedGender
                         )
                         viewModel.registerTeacher(teacher)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = authState !is AuthState.Loading
+                enabled = authState !is AuthState.Loading && isFormValid
             ) {
-                Text("Register")
+                if (authState is AuthState.Loading) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+                } else {
+                    Text("Register")
+                }
             }
 
+            // Lien vers la page de login
             TextButton(onClick = onNavigateToLogin) {
                 Text("Already have an account? Login")
             }

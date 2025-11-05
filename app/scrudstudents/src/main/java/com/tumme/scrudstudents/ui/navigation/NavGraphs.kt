@@ -1,6 +1,7 @@
 package com.tumme.scrudstudents.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation.*
 import androidx.navigation.compose.NavHost
@@ -20,23 +21,17 @@ object Routes {
     const val LOGIN = "login"
     const val REGISTER = "register"
 
-    // Graph Roots
-    const val STUDENT_GRAPH = "student_graph"
-    const val TEACHER_GRAPH = "teacher_graph"
+    // Graph Roots with arguments
+    const val STUDENT_GRAPH = "student_graph/{studentId}/{studentLevel}"
+    const val TEACHER_GRAPH = "teacher_graph/{teacherId}"
 
-    // Student Routes
-    const val STUDENT_HOME = "student_home/{studentId}/{studentLevel}"
-
-    // Teacher Routes
-    const val TEACHER_HOME = "teacher_home/{teacherId}"
+    // Screen routes (simplified)
+    const val STUDENT_HOME = "student_home"
+    const val TEACHER_HOME = "teacher_home"
     const val DECLARE_COURSE = "declare_course"
     const val TEACHER_COURSE_DETAIL = "teacher_course_detail/{courseId}"
 }
 
-/**
- * The main navigation host for the entire application.
- * Handles authentication and redirects to the appropriate role-based navigation graph.
- */
 @Composable
 fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(navController, startDestination = Routes.LOGIN, modifier = modifier) {
@@ -46,10 +41,14 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onLoginSuccess = { user: LoggedInUser ->
                     val route = when (user.role) {
                         UserRole.STUDENT -> Routes.STUDENT_GRAPH
+                            .replace("{studentId}", user.id.toString())
+                            .replace("{studentLevel}", user.level!!)
                         UserRole.TEACHER -> Routes.TEACHER_GRAPH
+                            .replace("{teacherId}", user.id.toString())
                     }
                     navController.navigate(route) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
                     }
                 },
                 onNavigateToRegister = { navController.navigate(Routes.REGISTER) }
@@ -60,12 +59,16 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
                 onRegisterSuccess = { user: LoggedInUser ->
                     val route = when (user.role) {
                         UserRole.STUDENT -> Routes.STUDENT_GRAPH
+                            .replace("{studentId}", user.id.toString())
+                            .replace("{studentLevel}", user.level!!)
                         UserRole.TEACHER -> Routes.TEACHER_GRAPH
+                            .replace("{teacherId}", user.id.toString())
                     }
                     navController.navigate(route) {
                         popUpTo(Routes.LOGIN) { inclusive = true }
+                        launchSingleTop = true
                     }
-                 },
+                },
                 onNavigateToLogin = { navController.popBackStack() }
             )
         }
@@ -76,23 +79,15 @@ fun AppNavHost(navController: NavHostController, modifier: Modifier = Modifier) 
     }
 }
 
-/**
- * Defines the navigation graph for the Student role.
- */
 private fun NavGraphBuilder.studentGraph(navController: NavHostController) {
     navigation(
-        route = Routes.STUDENT_GRAPH,
-        startDestination = Routes.STUDENT_HOME
+        startDestination = Routes.STUDENT_HOME,
+        route = Routes.STUDENT_GRAPH
     ) {
-        composable(
-            route = Routes.STUDENT_HOME,
-            arguments = listOf(
-                navArgument("studentId") { type = NavType.IntType },
-                navArgument("studentLevel") { type = NavType.StringType; nullable = true }
-            )
-        ) {
-            val studentId = it.arguments?.getInt("studentId") ?: 0
-            val studentLevel = it.arguments?.getString("studentLevel") ?: ""
+        composable(Routes.STUDENT_HOME) {
+            val parentEntry = remember(it) { navController.getBackStackEntry(Routes.STUDENT_GRAPH) }
+            val studentId = parentEntry.arguments?.getInt("studentId") ?: 0
+            val studentLevel = parentEntry.arguments?.getString("studentLevel") ?: ""
             StudentHomeScreen(
                 studentId = studentId,
                 studentLevel = studentLevel,
@@ -102,19 +97,14 @@ private fun NavGraphBuilder.studentGraph(navController: NavHostController) {
     }
 }
 
-/**
- * Defines the navigation graph for the Teacher role.
- */
 private fun NavGraphBuilder.teacherGraph(navController: NavHostController) {
     navigation(
-        route = Routes.TEACHER_GRAPH,
-        startDestination = Routes.TEACHER_HOME
+        startDestination = Routes.TEACHER_HOME,
+        route = Routes.TEACHER_GRAPH
     ) {
-        composable(
-            route = Routes.TEACHER_HOME,
-            arguments = listOf(navArgument("teacherId") { type = NavType.IntType })
-        ) {
-            val teacherId = it.arguments?.getInt("teacherId") ?: 0
+        composable(Routes.TEACHER_HOME) {
+            val parentEntry = remember(it) { navController.getBackStackEntry(Routes.TEACHER_GRAPH) }
+            val teacherId = parentEntry.arguments?.getInt("teacherId") ?: 0
             TeacherHomeScreen(
                 teacherId = teacherId,
                 navController = navController,

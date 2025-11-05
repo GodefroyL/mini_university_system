@@ -9,20 +9,12 @@ import com.tumme.scrudstudents.data.local.dao.CourseDao
 import com.tumme.scrudstudents.data.local.dao.StudentDao
 import com.tumme.scrudstudents.data.local.dao.SubscribeDao
 import com.tumme.scrudstudents.data.local.dao.TeacherDao
-import com.tumme.scrudstudents.data.local.model.CourseEntity
-import com.tumme.scrudstudents.data.local.model.Gender
-import com.tumme.scrudstudents.data.local.model.StudentEntity
-import com.tumme.scrudstudents.data.local.model.TeacherEntity
 import com.tumme.scrudstudents.data.repository.SCRUDRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import javax.inject.Provider
 import javax.inject.Singleton
 
 @Module
@@ -31,39 +23,33 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(
-        @ApplicationContext context: Context,
-        studentDaoProvider: Provider<StudentDao>,
-        teacherDaoProvider: Provider<TeacherDao>,
-        courseDaoProvider: Provider<CourseDao> // Add CourseDao provider
+        @ApplicationContext context: Context
     ): AppDatabase {
-        return Room.databaseBuilder(context, AppDatabase::class.java, "scrud-db")
+        return Room.databaseBuilder(context, AppDatabase::class.java, "scrud-db-final-final-version") // Final name change
             .fallbackToDestructiveMigration()
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-                    // Pre-populate database on creation
-                    CoroutineScope(Dispatchers.IO).launch {
-                        // Teachers
-                        teacherDaoProvider.get().insert(TeacherEntity(1, "Michel", "Vincent", "m.vincent@univ.com", "password"))
-                        teacherDaoProvider.get().insert(TeacherEntity(2, "Remi", "Pasquier", "remi.pasquier@univ.com", "password"))
-
-                        // Students
-                        studentDaoProvider.get().insert(StudentEntity(1, "Louis", "Dupont", "louis.dupont@example.com", "password", "04/11/2025", Gender.Male, "B1"))
-                        studentDaoProvider.get().insert(StudentEntity(2, "Jehanne", "de Boisgarnier", "j.dbg@example.com", "password", "04/11/2025", Gender.Female, "B2"))
-
-                        // Courses (with levels that will now appear in registration)
-                        courseDaoProvider.get().insert(CourseEntity(nameCourse = "Algorithmie", ectsCourse = 5.0f, levelCode = "B1", teacherId = 1, description = "Bases de l'algorithmie"))
-                        courseDaoProvider.get().insert(CourseEntity(nameCourse = "Base de données", ectsCourse = 4.0f, levelCode = "B2", teacherId = 2, description = "Introduction à SQL"))
-                        courseDaoProvider.get().insert(CourseEntity(nameCourse = "Développement Web", ectsCourse = 6.0f, levelCode = "B3", teacherId = 1, description = "HTML, CSS, JavaScript"))
+                    // Use a direct transaction to ensure data is written before the DB is used.
+                    db.beginTransaction()
+                    try {
+                        db.execSQL("INSERT INTO teachers (firstName, lastName, email, password, gender, registrationDate) VALUES ('Michel', 'Vincent', 'm.vincent@univ.com', 'password', 'Male', 1672531200000)")
+                        db.execSQL("INSERT INTO teachers (firstName, lastName, email, password, gender, registrationDate) VALUES ('Remi', 'Pasquier', 'remi.pasquier@univ.com', 'password', 'Male', 1672531200000)")
+                        // Use registrationData to match the schema
+                        db.execSQL("INSERT INTO students (firstName, lastName, email, password, dateOfBirth, gender, levelCode, registrationData) VALUES ('Louis', 'Dupont', 'louis.dupont@example.com', 'password', '2001-11-09', 'Male', 'B1', 1672531200000)")
+                        db.execSQL("INSERT INTO students (firstName, lastName, email, password, dateOfBirth, gender, levelCode, registrationData) VALUES ('Jehanne', 'de Boisgarnier', 'j.dbg@example.com', 'password', '2005-03-04', 'Female', 'B2', 1672531200000)")
+                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description) VALUES ('Algorithmie', 5.0, 'B1', 'Bases de l\'\'algorithmie')")
+                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description) VALUES ('Base de données', 4.0, 'B2', 'Introduction à SQL')")
+                        db.execSQL("INSERT INTO courses (nameCourse, ectsCourse, levelCode, description) VALUES ('Développement Web', 6.0, 'B3', 'HTML, CSS, JavaScript')")
+                        db.setTransactionSuccessful()
+                    } finally {
+                        db.endTransaction()
                     }
                 }
             })
             .build()
     }
 
-    /**
-     * Provides the DAOs for all entities
-     */
     @Provides
     fun provideStudentDao(db: AppDatabase): StudentDao = db.studentDao()
 

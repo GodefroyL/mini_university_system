@@ -12,10 +12,10 @@ data class StudentEntity(
     val firstName: String,
     val lastName: String,
     val email: String,
-    val password: String,  // Dans une application réelle, stockez un hash
-    val dateOfBirth: String,  // Timestamp
+    val password: String,  // In a real app, store a hash
+    val dateOfBirth: String,
     @field:TypeConverters(Converters::class)
     val gender: Gender,
-    val levelCode: String,  // Code du niveau (P1, B1, etc.)
-    val registrationDate: Long = System.currentTimeMillis()  // Timestamp
+    val levelCode: String,
+    val registrationData: Long = System.currentTimeMillis()  // Changed to match DB schema
 )
